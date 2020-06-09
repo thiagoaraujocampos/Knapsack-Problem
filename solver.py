@@ -1,3 +1,4 @@
+from ortools.linear_solver import pywraplp
 from collections import namedtuple
 Item = namedtuple("Item", ['index', 'value', 'weight'])
 
@@ -27,20 +28,17 @@ def solve_it(input_data):
 
     return knapsackNaive(item_count, items, capacity, conflict_count, conflicts)
 
-
 def knapsackNaive(num_items, items, capacity, num_conflicts, conflicts):
 
     if DEBUG >= 1:
         print(f"numero de itens = {num_items}")
         print(f"capacidade da mochila = {capacity}")
         print(f"numero de conflitos = {num_conflicts}")
-
     if DEBUG >= 2:
         print("Itens na ordem em que foram lidos")
         for item in items:
             print(item)
         print()
-
     if DEBUG >= 2:
         print("Conflitos na ordem em que foram lidos")
         for conflict in conflicts:
@@ -48,16 +46,26 @@ def knapsackNaive(num_items, items, capacity, num_conflicts, conflicts):
         print()
 
     # Modify this code to run your optimization algorithm
-
     solution = [0]*num_items
     solution_value = 0
     solution_weight = 0
 
-    for item in items:
-        if solution_weight + item.weight <= capacity:
-            solution[item.index] = 1
-            solution_value += item.value
-            solution_weight += item.weight
+    # Using OR-Tools
+    solver = pywraplp.Solver('SolveIntegerProblem', pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
+
+    x = []
+    for j in range(0, num_items):
+        x.append(solver.IntVar(0.0, 1.0, 'x[%d]' % j))
+
+    solver.Add(solver.Sum([items[i].weight*x[i] for i in range(num_items)]) <= capacity)    
+    #solver.Add(solver.Sum(conflicts[] for i in range(num_items)]) <= capacity)
+    solver.Maximize(solver.Sum([items[i].value*x[i] for i in range(num_items)]))
+
+    result_status = solver.Solve()
+
+    solution_value = int(solver.Objective().Value())
+    for i in range(len(x)): 
+        solution[i] = int(x[i].solution_value())
 
     # prepare the solution in the specified output format
     output_data = str(solution_value) + '\n'
