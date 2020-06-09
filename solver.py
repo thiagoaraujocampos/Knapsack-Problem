@@ -55,14 +55,20 @@ def knapsackNaive(num_items, items, capacity, num_conflicts, conflicts):
 
     x = []
     for j in range(0, num_items):
-        x.append(solver.IntVar(0.0, 1.0, 'x[%d]' % j))
+        x.append(solver.IntVar(0, 1, 'x[%d]' % j))
 
+    # Capacity restrictions
     solver.Add(solver.Sum([items[i].weight*x[i] for i in range(num_items)]) <= capacity)    
-    #solver.Add(solver.Sum(conflicts[] for i in range(num_items)]) <= capacity)
+    # Conflict restrictions
+    for i in range(num_conflicts):
+        solver.Add((x[conflicts[i][0]]+x[conflicts[i][1]]) <= 1)
+    # Objective -> maximize total value in the bag
     solver.Maximize(solver.Sum([items[i].value*x[i] for i in range(num_items)]))
 
+    # solution status (not used in the moment)
     result_status = solver.Solve()
 
+    # formating solution output
     solution_value = int(solver.Objective().Value())
     for i in range(len(x)): 
         solution[i] = int(x[i].solution_value())
